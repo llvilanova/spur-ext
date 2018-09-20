@@ -239,15 +239,13 @@ def wait_ssh(shell, timeout=0):
     local = LocalShell()
     cmd = [
         "sshpass", "-p", shell._password,
-        "ssh", "-o", "ConnectTimeout=1",
+        "ssh",
+        "-o", "ConnectTimeout=1",
+        "-o", "StrictHostKeyChecking=no",
         "-p", str(shell._port), shell.username+"@"+shell.hostname,
         "true",
     ]
-    try:
-        wait_run(local, cmd, timeout=timeout, rerun_error=True)
-    except:
-        # run once more and show error (it could be key related)
-        local.run(cmd)
+    wait_run(local, cmd, timeout=timeout, rerun_error=True)
 
 
 def rsync(src_shell, src_path, dst_shell, dst_path, args=[]):
