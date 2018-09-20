@@ -719,7 +719,10 @@ def cgroup_move_ssh(shell, subsystem, name):
         pids = [p for p in f.read().split("\n")
                 if p != ""]
         if len(pids) > 0:
-            cgroup_move(shell, subsystem, name, pids)
+            try:
+                cgroup_move(shell, subsystem, name, pids)
+            except:
+                pass
 
     # NOTE: ensure connection is reopened
     shell._client.close()
