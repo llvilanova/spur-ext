@@ -243,7 +243,11 @@ def wait_ssh(shell, timeout=0):
         "-p", str(shell._port), shell.username+"@"+shell.hostname,
         "true",
     ]
-    wait_run(local, cmd, timeout=timeout, rerun_error=True)
+    try:
+        wait_run(local, cmd, timeout=timeout, rerun_error=True)
+    except:
+        # run once more and show error (it could be key related)
+        local.run(cmd)
 
 
 def rsync(src_shell, src_path, dst_shell, dst_path, args=[]):
