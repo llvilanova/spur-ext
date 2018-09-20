@@ -22,9 +22,12 @@ import re
 import six
 import spur
 try:
+    import spur_watchdog_patch
     from spur_watchdog_patch import SshShell, LocalShell
+    spur_patch = True
 except:
     from spur import SshShell, LocalShell
+    spur_patch = False
 import time
 
 
@@ -260,17 +263,41 @@ def rsync(src_shell, src_path, dst_shell, dst_path, args=[]):
         Additional arguments to rsync. Default is none.
 
     """
+    def is_local_shell(shell):
+        if spur_patch:
+            return (isinstance(shell, spur_watchdog_patch.LocalShell)
+                    or isinstance(shell, spur.LocalShell))
+        else:
+            return isinstance(shell, spur.LocalShell)
+    if not is_local_shell(src_shell) and not is_local_shell(dst_shell):
+        raise Exception("rsync cannot work with two remote shells")
+
     local = LocalShell()
-    cmd = ["rsync", "-az", "-e", "ssh -o StrictHostKeyChecking=no"]
+
+    ssh_port = 22
+    cmd_pass = []
+    if is_local_shell(src_shell):
+        cmd_src = [src_path]
+    else:
+        ssh_port = src_shell._port
+        if src_shell._password is not None:
+            cmd_pass = ["sshpass", "-p", src_shell._password]
+        cmd_src = ["%s@%s:%s" % (src_shell.username, src_shell.hostname, src_path)]
+    if is_local_shell(dst_shell):
+        cmd_dst = [dst_path]
+    else:
+        ssh_port = dst_shell._port
+        if dst_shell._password is not None:
+            cmd_pass = ["sshpass", "-p", dst_shell._password]
+        cmd_dst = ["%s@%s:%s" % (dst_shell.username, dst_shell.hostname, dst_path)]
+
+    cmd = []
+    cmd += cmd_pass
+    cmd += ["rsync", "-az"]
+    cmd += ["-e", "ssh -p %d -o StrictHostKeyChecking=no" % ssh_port]
+    cmd += cmd_src
+    cmd += cmd_dst
     cmd += args
-    if isinstance(src_shell, SshShell):
-        cmd += ["%s@%s:%s" % (src_shell.username, src_shell.hostname, src_path)]
-    else:
-        cmd += [src_path]
-    if isinstance(dst_shell, SshShell):
-        cmd += ["%s@%s:%s" % (dst_shell.username, dst_shell.hostname, dst_path)]
-    else:
-        cmd += [dst_path]
     local.run(cmd)
 
 
