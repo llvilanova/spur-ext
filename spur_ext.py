@@ -28,6 +28,7 @@ try:
 except:
     from spur import SshShell, LocalShell
     spur_patch = False
+import StringIO
 import time
 
 
@@ -247,6 +248,72 @@ def wait_ssh(shell, timeout=0):
         "true",
     ]
     wait_run(local, cmd, timeout=timeout, rerun_error=True)
+
+
+def print_stringio(obj):
+    """Print contents of a StringIO object as they become available.
+
+    Useful in combination with `wait_stringio` to print an output while
+    processing it.
+
+    Examples
+    --------
+    >>> stdout = StringIO.StringIO()
+    >>> thread.start_new_thread(print_stringio, (stdout,))
+    >>> proc.run(["sh", "-c", "sleep 1 ; echo start ; sleep 2; echo end ; sleep 1"], stdout=stdout)
+    start
+    end
+
+    See also
+    --------
+    wait_stringio
+
+    """
+    if not isinstance(obj, StringIO.StringIO):
+        raise TypeError("expected a StringIO object")
+    seen = 0
+    while True:
+        time.sleep(0.5)
+        contents = obj.getvalue()
+        missing = contents[seen:]
+        print(missing, end="")
+        seen += len(missing)
+
+
+def wait_stringio(obj, pattern):
+    """Wait until a StringIO's contents match the given regex.
+
+    Useful to trigger operations when a process generates certain output.
+
+    Examples
+    --------
+    Count time between two lines of output in a process:
+
+    >>> stdout = StringIO.StringIO()
+    >>> def timer(obj):
+            wait_stringio("^start$")
+            t_start = time.time()
+            wait_stringio("^end$")
+            t_end = time.time()
+            print("time:", int(t_end - t_start))
+    >>> thread.start_new_thread(bench_detector, (stdout,))
+    >>> proc.run(["sh", "-c", "sleep 1 ; echo start ; sleep 2; echo end ; sleep 1"], stdout=stdout)
+    time: 2
+
+    See also
+    --------
+    print_stringio
+
+    """
+    if not isinstance(obj, StringIO.StringIO):
+        raise TypeError("expected a StringIO object")
+    cre = re.compile(pattern, re.MULTILINE)
+    while True:
+        time.sleep(0.5)
+        contents = obj.getvalue()
+        match = cre.findall(contents)
+        if len(match) > 0:
+            return
 
 
 def rsync(src_shell, src_path, dst_shell, dst_path, args=[]):
