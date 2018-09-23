@@ -229,7 +229,7 @@ def wait_run(shell, *args, **kwargs):
 def wait_connection(shell, address, port, timeout=0):
     """Wait until we can connect to given address/port."""
     cmd = ["sh", "-c", "echo | nc %s %d" % (address, port)]
-    wait_run(shell, cmd, timeout=timeout)
+    wait_run(shell, cmd, timeout=timeout, rerun_error=True)
 
 
 def wait_ssh(shell, timeout=0):
