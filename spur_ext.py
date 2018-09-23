@@ -164,6 +164,7 @@ def install_deps(shell, packages=None):
 
     """
     install(shell, "cgroup-tools")
+    install(shell, "hwloc")
     install(shell, "rsync")
     install(shell, "netcat-traditional")
     install(shell, "psmisc")
