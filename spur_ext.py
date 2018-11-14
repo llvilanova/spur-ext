@@ -795,7 +795,7 @@ def get_cpus(shell, node=None, package=None, core=None, pu=None, cgroup=None):
     return res
 
 
-def pin_pid(shell, pid, cpus):
+def pin_pid(shell, pid, cpus, allow_error=False, stderr=None):
     """Pin pid to given physical CPU list.
 
     Parameters
@@ -809,7 +809,8 @@ def pin_pid(shell, pid, cpus):
 
     """
     shell.run(["sudo", "taskset", "-p",
-               "-c", ",".join(str(c) for c in cpus), str(pid)])
+               "-c", ",".join(str(c) for c in cpus), str(pid)],
+              allow_error=allow_error, stderr=stderr)
 
 
 def cgroup_create(shell, subsystem, name, **kwargs):
