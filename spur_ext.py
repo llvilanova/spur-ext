@@ -250,7 +250,7 @@ def wait_ssh(shell, timeout=0):
     wait_run(local, cmd, timeout=timeout, rerun_error=True)
 
 
-def print_stringio(obj):
+def print_stringio(obj, out=None):
     """Print contents of a StringIO object as they become available.
 
     Useful in combination with `wait_stringio` to print an output while
@@ -276,7 +276,7 @@ def print_stringio(obj):
         time.sleep(0.5)
         contents = obj.getvalue()
         missing = contents[seen:]
-        print(missing, end="")
+        print(missing, end="", file=out)
         seen += len(missing)
 
 
