@@ -276,8 +276,11 @@ def print_stringio(obj, out=None):
         time.sleep(0.5)
         contents = obj.getvalue()
         missing = contents[seen:]
-        print(missing, end="", file=out)
-        seen += len(missing)
+        if len(missing) > 0:
+            print(missing, end="", file=out)
+            if out:
+                out.flush()
+            seen += len(missing)
 
 
 def wait_stringio(obj, pattern):
