@@ -319,7 +319,7 @@ def wait_stringio(obj, pattern):
             return
 
 
-def rsync(src_shell, src_path, dst_shell, dst_path, args=[]):
+def rsync(src_shell, src_path, dst_shell, dst_path, run_shell=None, args=[]):
     """Synchronize two directories using rsync.
 
     Parameters
@@ -332,6 +332,8 @@ def rsync(src_shell, src_path, dst_shell, dst_path, args=[]):
         Destination shell.
     dst_path
         Destination directory.
+    run_shell : optional
+        Shell where to run rsync. Default is local machine.
     args : list of str, optional
         Additional arguments to rsync. Default is none.
 
@@ -342,21 +344,23 @@ def rsync(src_shell, src_path, dst_shell, dst_path, args=[]):
                     or isinstance(shell, spur.LocalShell))
         else:
             return isinstance(shell, spur.LocalShell)
-    if not is_local_shell(src_shell) and not is_local_shell(dst_shell):
+    if (not is_local_shell(src_shell) and not is_local_shell(dst_shell) and
+        run_shell is not src_shell and run_shell is not dst_shell):
         raise Exception("rsync cannot work with two remote shells")
 
-    local = LocalShell()
+    if run_shell is None:
+        run_shell = LocalShell()
 
     ssh_port = 22
     cmd_pass = []
-    if is_local_shell(src_shell):
+    if is_local_shell(src_shell) or run_shell is src_shell:
         cmd_src = [src_path]
     else:
         ssh_port = src_shell._port
         if src_shell._password is not None:
             cmd_pass = ["sshpass", "-p", src_shell._password]
         cmd_src = ["%s@%s:%s" % (src_shell.username, src_shell.hostname, src_path)]
-    if is_local_shell(dst_shell):
+    if is_local_shell(dst_shell) or run_shell is dst_shell:
         cmd_dst = [dst_path]
     else:
         ssh_port = dst_shell._port
@@ -371,7 +375,7 @@ def rsync(src_shell, src_path, dst_shell, dst_path, args=[]):
     cmd += cmd_src
     cmd += cmd_dst
     cmd += args
-    local.run(cmd)
+    run_shell.run(cmd)
 
 
 def check_kernel_version(shell, target, fail=True):
